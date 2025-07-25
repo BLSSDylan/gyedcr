@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestión de Socios - Club</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="flex min-h-screen">
+    <!-- Barra de navegación -->
+    <aside class="w-64 bg-blue-900 text-white flex flex-col">
+      <div class="h-20 flex items-center justify-center border-b border-blue-700">
+        <!-- Logo del club (cuadro blanco de ejemplo) -->
+        <div class="w-16 h-16 bg-white rounded"></div>
+      </div>
+      <nav class="flex-grow p-4 space-y-4">
+        <a href="#formulario" class="block px-4 py-2 rounded hover:bg-blue-700">Registrar Socio</a>
+        <a href="#socios" class="block px-4 py-2 rounded hover:bg-blue-700">Ver Socios</a>
+        <a href="#mensajes" class="block px-4 py-2 rounded hover:bg-blue-700">Enviar Mensaje</a>
+      </nav>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main class="flex-grow p-8">
+      <!-- Formulario para registrar socio -->
+      <section id="formulario" class="mb-12">
+        <h2 class="text-2xl font-bold text-blue-900 mb-4">Registrar Nuevo Socio</h2>
+        <form id="socioForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input type="text" name="nombre" placeholder="Nombre completo" class="p-2 border rounded" required>
+          <input type="text" name="celular" placeholder="Número de celular" class="p-2 border rounded" required>
+          <select name="categoria" class="p-2 border rounded">
+            <option value="">Seleccionar categoría (año)</option>
+            <!-- Generado dinámicamente con JS -->
+          </select>
+          <select name="deporte" class="p-2 border rounded">
+            <option value="">Seleccionar deporte</option>
+            <option value="futbol">Fútbol</option>
+            <option value="patin">Patín</option>
+          </select>
+          <input type="text" name="id_socio" placeholder="ID de socio" class="p-2 border rounded">
+          <input type="text" name="tipo_cuota" placeholder="Tipo de cuota" class="p-2 border rounded">
+          <input type="text" name="precio_cuota" placeholder="Precio de la cuota" class="p-2 border rounded">
+          <input type="date" name="vencimiento" placeholder="Fecha de vencimiento" class="p-2 border rounded">
+          <button type="submit" class="md:col-span-2 mt-4 bg-blue-800 hover:bg-blue-700 text-white px-4 py-2 rounded">Guardar Socio</button>
+        </form>
+      </section>
+
+      <!-- Tabla de socios -->
+      <section id="socios" class="mb-12">
+        <h2 class="text-2xl font-bold text-blue-900 mb-4">Lista de Socios</h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full bg-white rounded shadow">
+            <thead>
+              <tr class="bg-blue-800 text-white">
+                <th class="p-2 text-left">Nombre</th>
+                <th class="p-2 text-left">Celular</th>
+                <th class="p-2 text-left">Categoría</th>
+                <th class="p-2 text-left">Deporte</th>
+                <th class="p-2 text-left">ID</th>
+                <th class="p-2 text-left">Tipo de Cuota</th>
+                <th class="p-2 text-left">Precio</th>
+                <th class="p-2 text-left">Vencimiento</th>
+              </tr>
+            </thead>
+            <tbody id="tablaSocios">
+              <!-- Los socios se cargan aquí automáticamente -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Mensajes filtrados -->
+      <section id="mensajes">
+        <h2 class="text-2xl font-bold text-blue-900 mb-4">Enviar Mensaje a Socios</h2>
+        <form id="filtroForm" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <select name="deporte" class="p-2 border rounded">
+            <option value="">Filtrar por deporte</option>
+            <option value="futbol">Fútbol</option>
+            <option value="patin">Patín</option>
+          </select>
+          <select name="categoria" class="p-2 border rounded" id="filtroCategoria">
+            <option value="">Filtrar por categoría</option>
+            <!-- Generado dinámicamente con JS -->
+          </select>
+          <input type="text" name="mensaje" placeholder="Escribe el mensaje" class="p-2 border rounded md:col-span-2">
+          <button type="submit" class="bg-blue-800 hover:bg-blue-700 text-white px-4 py-2 rounded">Filtrar y Enviar</button>
+        </form>
+        <ul id="resultadoFiltro" class="list-disc pl-5"></ul>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const supabaseUrl = "https://kkrulqvxjehserrqyumb.supabase.co";
+    const supabaseKey = "process.env.SUPABASE_KEY";
+    const tableName = "socios";
+
+    function generarOpcionesCategorias(selectId) {
+      const select = document.getElementById(selectId);
+      for (let i = 2004; i <= 2025; i++) {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = i;
+        select.appendChild(opt);
+      }
+    }
+
+    generarOpcionesCategorias('filtroCategoria');
+    generarOpcionesCategorias(document.querySelector('select[name="categoria"]').id = 'registroCategoria');
+
+    document.getElementById('socioForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const data = Object.fromEntries(new FormData(form));
+
+      const res = await fetch(`${supabaseUrl}/rest/v1/${tableName}`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (res.ok) {
+        form.reset();
+        cargarSocios();
+      } else {
+        alert('Error al guardar socio');
+      }
+    });
+
+    async function cargarSocios() {
+      const res = await fetch(`${supabaseUrl}/rest/v1/${tableName}?select=*`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`
+        }
+      });
+      const socios = await res.json();
+      const tabla = document.getElementById('tablaSocios');
+      tabla.innerHTML = socios.map(s => `
+        <tr class="border-b">
+          <td class="p-2">${s.nombre}</td>
+          <td class="p-2">${s.celular}</td>
+          <td class="p-2">${s.categoria}</td>
+          <td class="p-2">${s.deporte}</td>
+          <td class="p-2">${s.id_socio}</td>
+          <td class="p-2">${s.tipo_cuota}</td>
+          <td class="p-2">${s.precio_cuota}</td>
+          <td class="p-2">${s.vencimiento}</td>
+        </tr>
+      `).join('');
+    }
+
+    document.getElementById('filtroForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const filtros = Object.fromEntries(new FormData(form));
+      let query = [];
+      for (const key in filtros) {
+        if (filtros[key] && key !== 'mensaje') {
+          query.push(`${key}=eq.${filtros[key]}`);
+        }
+      }
+      const res = await fetch(`${supabaseUrl}/rest/v1/${tableName}?select=*&${query.join('&')}`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`
+        }
+      });
+      const socios = await res.json();
+      const lista = document.getElementById('resultadoFiltro');
+      lista.innerHTML = socios.map(s => `<li>Mensaje enviado a ${s.nombre} (${s.celular})</li>`).join('');
+      // Aquí podrías disparar tu webhook de n8n para cada uno con fetch si lo deseas
+    });
+
+    cargarSocios();
+  </script>
+</body>
+</html>
